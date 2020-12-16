@@ -193,6 +193,11 @@ class AdamOpMaker : public framework::OpProtoAndCheckerMaker {
                   "(bool, default false) "
                   "Whether to use multi-precision during weight updating.")
         .SetDefault(false);
+    AddAttr<float>("weight_decay",
+                   "(float, default 0.0) "
+                   "Weight decay rate.")
+        .SetDefault(0.0f);
+
 
     AddComment(R"DOC(
 Adam Optimizer.
