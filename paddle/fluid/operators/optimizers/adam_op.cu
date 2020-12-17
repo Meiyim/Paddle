@@ -21,11 +21,11 @@ namespace operators {
 template <typename T, typename MT>
 __global__ void AdamKernelREG(MT beta1, MT beta2, MT epsilon, MT beta1_pow_,
                               MT beta2_pow_, const MT* moment1, MT* moment1_out,
-                              const MT* moment2, MT* moment2_out, const MT* lr_,
+                              const MT* moment2, MT* moment2_out, const MT* lr_, MT weight_decay, MT lr_ratio,
                               const T* grad, const T* param, T* param_out,
                               const MT* master_param, MT* master_param_out,
                               int ndim) {
-  MT lr = *lr_;
+  MT lr = *lr_ * lr_ratio;
   MT lr_orig = lr;
   MT beta1_pow = beta1_pow_;
   MT beta2_pow = beta2_pow_;
@@ -59,11 +59,11 @@ template <typename T, typename MT>
 __global__ void AdamKernelMEM(MT beta1, MT beta2, MT epsilon,
                               const MT* beta1_pow_, const MT* beta2_pow_,
                               const MT* moment1, MT* moment1_out,
-                              const MT* moment2, MT* moment2_out, const MT* lr_, MT weight_decay,
+                              const MT* moment2, MT* moment2_out, const MT* lr_, MT weight_decay, MT lr_ratio,
                               const T* grad, const T* param, T* param_out,
                               const MT* master_param, MT* master_param_out,
                               int ndim) {
-  MT lr = *lr_;
+  MT lr = *lr_ * lr_ratio;
   MT lr_orig = lr;
   MT beta1_pow = *beta1_pow_;
   MT beta2_pow = *beta2_pow_;
@@ -162,6 +162,7 @@ class AdamOpCUDAKernel : public framework::OpKernel<T> {
     bool lazy_mode = ctx.Attr<bool>("lazy_mode");
     MPDType epsilon = static_cast<MPDType>(ctx.Attr<float>("epsilon"));
     MPDType weight_decay = static_cast<T>(ctx.Attr<float>("weight_decay"));
+    MPDType lr_ratio = static_cast<T>(ctx.Attr<float>("lr_ratio"));
     auto* param = ctx.Input<LoDTensor>("Param");
     auto* grad_var = ctx.InputVar("Grad");
     auto* mom1 = ctx.Input<LoDTensor>("Moment1");
@@ -249,7 +250,7 @@ class AdamOpCUDAKernel : public framework::OpKernel<T> {
             mom1_out->mutable_data<MPDType>(ctx.GetPlace()),
             mom2->data<MPDType>(),
             mom2_out->mutable_data<MPDType>(ctx.GetPlace()),
-            lr->data<MPDType>(), weight_decay, grad->data<T>(), param->data<T>(),
+            lr->data<MPDType>(), weight_decay, lr_ratio, grad->data<T>(), param->data<T>(),
             param_out->mutable_data<T>(ctx.GetPlace()), master_in_data,
             master_out_data, param->numel());
         // Cpu update
@@ -264,7 +265,7 @@ class AdamOpCUDAKernel : public framework::OpKernel<T> {
             mom1_out->mutable_data<MPDType>(ctx.GetPlace()),
             mom2->data<MPDType>(),
             mom2_out->mutable_data<MPDType>(ctx.GetPlace()),
-            lr->data<MPDType>(), weight_decay, grad->data<T>(), param->data<T>(),
+            lr->data<MPDType>(), weight_decay, lr_ratio, grad->data<T>(), param->data<T>(),
             param_out->mutable_data<T>(ctx.GetPlace()), master_in_data,
             master_out_data, param->numel());
         // Update with gpu

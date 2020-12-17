@@ -197,7 +197,10 @@ class AdamOpMaker : public framework::OpProtoAndCheckerMaker {
                    "(float, default 0.0) "
                    "Weight decay rate.")
         .SetDefault(0.0f);
-
+    AddAttr<float>("lr_ratio",
+                   "(float, default 1.0) "
+                   "Weight decay rate.")
+        .SetDefault(1.0f);
 
     AddComment(R"DOC(
 Adam Optimizer.

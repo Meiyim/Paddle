@@ -76,6 +76,7 @@ class AdamFunctor<T, GPUAdam> {
   T* moment2_out_;
   const T* lr_;
   T weight_decay_;
+  T lr_ratio_;
   const T* grad_;
   const T* param_;
   T* param_out_;
@@ -83,7 +84,7 @@ class AdamFunctor<T, GPUAdam> {
  public:
   AdamFunctor(T beta1, T beta2, T epsilon, const T* beta1_pow,
               const T* beta2_pow, const T* mom1, T* mom1_out, const T* mom2,
-              T* mom2_out, const T* lr, T weight_decay, const T* grad, const T* param,
+              T* mom2_out, const T* lr, T weight_decay, T lr_ratio, const T* grad, const T* param,
               T* param_out)
       : beta1_(beta1),
         beta2_(beta2),
@@ -96,6 +97,7 @@ class AdamFunctor<T, GPUAdam> {
         moment2_out_(mom2_out),
         lr_(lr),
         weight_decay_(weight_decay),
+        lr_ratio_(lr_ratio),
         grad_(grad),
         param_(param),
         param_out_(param_out) {}
@@ -105,7 +107,7 @@ class AdamFunctor<T, GPUAdam> {
     T g = grad_[i];
     T mom1 = moment1_[i];
     T mom2 = moment2_[i];
-    T lr = *lr_;
+    T lr = *lr_ * lr_ratio_;
     T beta1_pow = *beta1_pow_;
     T beta2_pow = *beta2_pow_;
     T p = param_[i];
@@ -141,6 +143,7 @@ class AdamFunctor<T, CPUAdam> {
   T* moment2_out_;
   const T* lr_;
   T weight_decay_;
+  T lr_ratio_;
   const T* grad_;
   const T* param_;
   T* param_out_;
@@ -148,7 +151,7 @@ class AdamFunctor<T, CPUAdam> {
  public:
   AdamFunctor(T beta1, T beta2, T epsilon, const T* beta1_pow,
               const T* beta2_pow, const T* mom1, T* mom1_out, const T* mom2,
-              T* mom2_out, const T* lr, T weight_decay, const T* grad, const T* param,
+              T* mom2_out, const T* lr, T weight_decay, T lr_ratio, const T* grad, const T* param,
               T* param_out)
       : beta1_(beta1),
         beta2_(beta2),
@@ -161,6 +164,7 @@ class AdamFunctor<T, CPUAdam> {
         moment2_out_(mom2_out),
         lr_(lr),
         weight_decay_(weight_decay),
+        lr_ratio_(lr_ratio),
         grad_(grad),
         param_(param),
         param_out_(param_out) {}
@@ -182,7 +186,7 @@ class AdamFunctor<T, CPUAdam> {
     Eigen::Map<Eigen::Array<T, 1, Eigen::Dynamic>> moment2_out{
         moment2_out_, static_cast<Eigen::Index>(numel)};
 
-    T lr = *lr_;
+    T lr = *lr_ * lr_ratio_;
     T beta1_pow = *beta1_pow_;
     T beta2_pow = *beta2_pow_;
 
@@ -451,6 +455,7 @@ class AdamOpKernel : public framework::OpKernel<T> {
     auto* mom2 = ctx.Input<LoDTensor>("Moment2");
     auto* lr = ctx.Input<LoDTensor>("LearningRate");
     T weight_decay = static_cast<T>(ctx.Attr<float>("weight_decay"));
+    T lr_ratio = static_cast<T>(ctx.Attr<float>("lr_ratio"));
 
     auto* beta1_pow = ctx.Input<LoDTensor>("Beta1Pow");
     auto* beta2_pow = ctx.Input<LoDTensor>("Beta2Pow");
@@ -502,7 +507,7 @@ class AdamOpKernel : public framework::OpKernel<T> {
           beta1, beta2, epsilon, beta1_pow->data<T>(), beta2_pow->data<T>(),
           mom1->data<T>(), mom1_out->mutable_data<T>(ctx.GetPlace()),
           mom2->data<T>(), mom2_out->mutable_data<T>(ctx.GetPlace()),
-          lr->data<T>(), weight_decay, grad->data<T>(), param->data<T>(),
+          lr->data<T>(), weight_decay, lr_ratio, grad->data<T>(), param->data<T>(),
           param_out->mutable_data<T>(ctx.GetPlace()));
       functor(param->numel());
       beta1_pow_out->mutable_data<T>(ctx.GetPlace())[0] =

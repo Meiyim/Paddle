@@ -18,7 +18,7 @@ import numpy as np
 import six
 import os
 import logging
-from collections import defaultdict
+from collections import defaultdict, Callable
 
 import paddle
 from paddle.fluid.distribute_lookup_table import find_distributed_lookup_table
@@ -2015,6 +2015,7 @@ class AdamOptimizer(Optimizer):
                  regularization=None,
                  grad_clip=None,
                  weight_decay=None,
+                 lr_ratio=None,
                  exclude_from_weight_decay_fn=None,
                  name=None,
                  lazy_mode=False):
@@ -2035,6 +2036,9 @@ class AdamOptimizer(Optimizer):
         self._lazy_mode = lazy_mode
         self._weight_decay = weight_decay
         self._exclude_from_weight_decay_fn = exclude_from_weight_decay_fn
+        if lr_ratio is not None:
+            assert isinstance(lr_ratio, Callable)
+        self._lr_ratio = lr_ratio
 
     def _create_accumulators(self, block, parameters):
         assert isinstance(block, framework.Block)
@@ -2114,7 +2118,9 @@ class AdamOptimizer(Optimizer):
             "epsilon": self._epsilon,
             "lazy_mode": self._lazy_mode,
             "min_row_size_to_use_multithread": 1000,
-            "weight_decay": weight_decay
+            "weight_decay": weight_decay,
+            "lr_ratio": 1. if self._lr_ratio is None else self._lr_ratio(param_and_grad[0])
+
         }
 
         if isinstance(self._beta1, Variable):
