@@ -190,7 +190,7 @@ class AdamFunctor<T, CPUAdam> {
     T beta1_pow = *beta1_pow_;
     T beta2_pow = *beta2_pow_;
 
-    param_out = lr * weight_decay_ * param;
+    param_out = lr * (1. - weight_decay_) * param;
 
     // Calculation
     lr *= sqrt(1 - beta2_pow) / (1 - beta1_pow);
