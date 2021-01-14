@@ -161,8 +161,8 @@ class AdamOpCUDAKernel : public framework::OpKernel<T> {
         ctx.Attr<int64_t>("min_row_size_to_use_multithread");
     bool lazy_mode = ctx.Attr<bool>("lazy_mode");
     MPDType epsilon = static_cast<MPDType>(ctx.Attr<float>("epsilon"));
-    MPDType weight_decay = static_cast<T>(ctx.Attr<float>("weight_decay"));
-    MPDType lr_ratio = static_cast<T>(ctx.Attr<float>("lr_ratio"));
+    MPDType weight_decay = static_cast<MPDType>(ctx.Attr<float>("weight_decay"));
+    MPDType lr_ratio = static_cast<MPDType>(ctx.Attr<float>("lr_ratio"));
     auto* param = ctx.Input<LoDTensor>("Param");
     auto* grad_var = ctx.InputVar("Grad");
     auto* mom1 = ctx.Input<LoDTensor>("Moment1");

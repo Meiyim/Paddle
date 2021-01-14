@@ -209,7 +209,6 @@ class SparseAdamFunctor;
 template <typename T, typename MT>
 class SparseAdamFunctor<T, GPUAdam, MT> {
  private:
-<<<<<<< HEAD
   MT beta1_;
   MT beta2_;
   MT epsilon_;
@@ -221,20 +220,7 @@ class SparseAdamFunctor<T, GPUAdam, MT> {
   const MT* moment2_;
   MT* moment2_out_;
   const MT* lr_;
-=======
-  T beta1_;
-  T beta2_;
-  T epsilon_;
-
-  const T* beta1_pow_;
-  const T* beta2_pow_;
-  const T* moment1_;
-  T* moment1_out_;
-  const T* moment2_;
-  T* moment2_out_;
-  const T* lr_;
-  T weight_decay_;
->>>>>>> adamw
+  MT weight_decay_;
   const T* grad_;
   const T* param_;
   T* param_out_;
@@ -247,18 +233,11 @@ class SparseAdamFunctor<T, GPUAdam, MT> {
   bool lazy_mode_;
 
  public:
-<<<<<<< HEAD
   SparseAdamFunctor(MT beta1, MT beta2, MT epsilon, const MT* beta1_pow,
                     const MT* beta2_pow, const MT* mom1, MT* mom1_out,
-                    const MT* mom2, MT* mom2_out, const MT* lr, const T* grad,
+                    const MT* mom2, MT* mom2_out, const MT* lr, MT weight_decay, const T* grad,
                     const T* param, T* param_out, const MT* master_param,
                     MT* master_param_out, const int64_t* rows,
-=======
-  SparseAdamFunctor(T beta1, T beta2, T epsilon, const T* beta1_pow,
-                    const T* beta2_pow, const T* mom1, T* mom1_out,
-                    const T* mom2, T* mom2_out, const T* lr, T weight_decay, const T* grad,
-                    const T* param, T* param_out, const int64_t* rows,
->>>>>>> adamw
                     int64_t row_numel, int64_t row_count, bool lazy_mode)
       : beta1_(beta1),
         beta2_(beta2),
