@@ -96,7 +96,7 @@ class ShardingOptimizer(MetaOptimizerBase):
             raise ValueError(
                 "self.inner_opt of ShardingOptimizer should not be None.")
         if self.use_pipeline:
-            pp_optimizer = fluid.optimizer.PipelineOptimizer(self.inner_opt)
+            pp_optimizer = fluid.optimizer.PipelineOptimizer(self.inner_opt, self.user_defined_strategy.sharding_configs['accumulate_steps'])
             main_program = loss.block.program
             main_program._pipeline_opt = dict()
             pp_rank = self.role_maker._worker_index() // (
