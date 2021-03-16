@@ -18,7 +18,7 @@ import numpy as np
 import six
 import os
 import logging
-from collections import defaultdict
+from collections import defaultdict, Callable
 
 import paddle
 from paddle.fluid.distribute_lookup_table import find_distributed_lookup_table
@@ -2014,6 +2014,9 @@ class AdamOptimizer(Optimizer):
                  parameter_list=None,
                  regularization=None,
                  grad_clip=None,
+                 weight_decay=None,
+                 lr_ratio=None,
+                 exclude_from_weight_decay_fn=None,
                  name=None,
                  lazy_mode=False,
                  multi_precision=False):
@@ -2034,6 +2037,11 @@ class AdamOptimizer(Optimizer):
         self._lazy_mode = lazy_mode
         self._multi_precision = multi_precision
         self._master_weights = {}
+        self._weight_decay = weight_decay
+        self._exclude_from_weight_decay_fn = exclude_from_weight_decay_fn
+        if lr_ratio is not None:
+            assert isinstance(lr_ratio, Callable)
+        self._lr_ratio = lr_ratio
 
     def _create_master_weight(self, param):
         assert isinstance(self.helper, LayerHelper)
@@ -2151,6 +2159,12 @@ class AdamOptimizer(Optimizer):
 
             return None
 
+        if self._exclude_from_weight_decay_fn is not None \
+            and self._exclude_from_weight_decay_fn(param_and_grad[0]):
+            weight_decay = 0.0
+        else:
+            weight_decay = self._weight_decay
+
         inputs = {
             "Param": [param_and_grad[0]],
             "Grad": [param_and_grad[1]],
@@ -2170,7 +2184,10 @@ class AdamOptimizer(Optimizer):
         attrs = {
             "epsilon": self._epsilon,
             "lazy_mode": self._lazy_mode,
-            "min_row_size_to_use_multithread": 1000
+            "min_row_size_to_use_multithread": 1000,
+            "weight_decay": weight_decay,
+            "lr_ratio": 1. if self._lr_ratio is None else self._lr_ratio(param_and_grad[0])
+
         }
 
         if isinstance(self._beta1, Variable):
@@ -2186,6 +2203,10 @@ class AdamOptimizer(Optimizer):
             inputs["MasterParam"] = master_weight
             outputs["MasterParamOut"] = master_weight
             attrs["multi_precision"] = find_master
+        for k, v in inputs.items():
+            print(f'{k}: {v[0].dtype}')
+        inputs = {k: [layers.cast(v[0], 'float32')] if  v[0].dtype == core.VarDesc.VarType.FP16 else v for k, v in inputs.items()}
+
 
         adam_op = block.append_op(
             type=self.type,
