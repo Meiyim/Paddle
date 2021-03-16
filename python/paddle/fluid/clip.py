@@ -454,13 +454,17 @@ class ClipGradByGlobalNorm(ClipGradBase):
                 if getattr(p, 'need_clip', True) is False:
                     continue
                 merge_grad = g
+                print(merge_grad.dtype)
                 with p.block.program._optimized_guard([p, g]):
                     if g.type == core.VarDesc.VarType.SELECTED_ROWS:
                         merge_grad = layers.merge_selected_rows(g)
                         merge_grad = layers.get_tensor_from_selected_rows(
                             merge_grad)
 
+                    if merge_grad.dtype == core.VarDesc.VarType.FP16 :
+                        merge_grad = layers.cast(merge_grad, 'float32')
                     square = layers.square(merge_grad)
+                    print(square.dtype)
                     sum_square = layers.reduce_sum(input=square)
                     sum_square_list.append(sum_square)
 
@@ -489,6 +493,10 @@ class ClipGradByGlobalNorm(ClipGradBase):
                     continue
 
                 with p.block.program._optimized_guard([p, g]):
+                    if g.dtype == core.VarDesc.VarType.FP16 :
+                        g = layers.cast(g, 'float32')
+                    print(f'grad type {g.dtype}')
+                    print(f'var type {scale_var.dtype}')
                     new_grad = layers.elementwise_mul(x=g, y=scale_var)
                 param_new_grad_name_dict[p.name] = new_grad.name
                 params_and_grads.append((p, new_grad))
